@@ -42,6 +42,7 @@ class Agent(Player):
         # if opponent placed his last cards on the table - call_cheat or lose
         action = self.agent_logic(deck_count, table_count, opponent_count,
                                   last_action, last_claim, honest_moves, cards_revealed)
+        assert action in honest_moves or isinstance(action, Cheat)
         if isinstance(action, Call_Cheat):
             self.call_cheat()
         elif isinstance(action, Claim):
@@ -56,7 +57,7 @@ class DemoAgent(Agent):
     def __init__(self, name):
         super(DemoAgent, self).__init__(name)
         self.cheat_prob = {"NO_MOVES": 0.6, "AVAIL_CLAIMS": 0.1}
-        self.call_cheat_prob = {1: 0.06, 2: 0.11, 3: 0.28, 4: 0.47}
+        self.call_cheat_prob = {1: 0.06, 2: 0.011, 3: 0.28, 4: 0.47}
 
     def agent_logic(self, deck_count, table_count, opponent_count,
                     last_action, last_claim, honest_moves, cards_revealed):
@@ -117,7 +118,7 @@ class DemoAgent(Agent):
             cheat_count = 1
             # decaying function of number of cards on the table - cheat less when risk is large
             r = 0.5 * exp(-0.1 * table_count)
-            while random.random() < r and len(self.cards) >= (cheat_count + 1) and cheat_count < 4:
+            while cheat_count < 4 and random.random() < r and len(self.cards) >= (cheat_count + 1):
                 cheat_count += 1
             # select cards furthest from current claim rank
             dist = defaultdict(int)
@@ -125,7 +126,8 @@ class DemoAgent(Agent):
                 dist[card] = cheat_rank.dist(card.rank)
             claim_cards = sorted(dist, key=dist.get)[:cheat_count]
             return Cheat(claim_cards, cheat_rank, cheat_count)
-
+            
+            
 class TrackingDemoAgent(Agent):
     def __init__(self, name):
         super(TrackingDemoAgent, self).__init__(name)
